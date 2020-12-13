@@ -43,7 +43,7 @@ def checkfile(get_files_path):
             compress(path, set_files_path,pwd)
 
 
-if __name__=='__main__':
+def files2zip():
     pwd = input("使用者密码：")#需要压缩的文件夹
     get_files_path = input("需要处理的文件路径：")#需要压缩的文件夹
     checkfile(get_files_path)

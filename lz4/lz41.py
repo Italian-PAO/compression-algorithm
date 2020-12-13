@@ -1,8 +1,6 @@
-#!/usr/bin/python
+# encoding: utf-8
 import lz4
 
-
-# 压缩文件
 def Compress(sou, des):
     try:
         with open(des, 'wb') as out:
@@ -14,7 +12,6 @@ def Compress(sou, des):
         print('文件找不到')
 
 
-# 解压文件
 def Decompresstion(sou, des):
     try:
         with open(des, 'wb') as out:
@@ -26,14 +23,6 @@ def Decompresstion(sou, des):
         print('文件找不到')
 
 
-# 命令行参数处理
-#def main(argv):
-#    if argv[1] == '-c':
-#        Compress(argv[3], argv[2])
-#    elif argv[0] == '-x':
-#        Decompresstion(argv[1], argv[2])
-#    else:
-#        print("Usage：lz4 -c dir_name.lz4r dir_name | lz4 -x dir_name.lz4r")
 def main(argv):
     if argv[0] == '-c':
         if len(argv) < 3:
@@ -46,7 +35,6 @@ def main(argv):
         Decompresstion(sou, des)
     else:
         print("Usage：lz4 -c dir_name.lz4r dir_name | lz4 -x dir_name.lz4r")
-
 
 if __name__ == '__main__':
     import sys

@@ -244,7 +244,7 @@ def file_decode(input_file):
     print('解压成功！')
 
 # 本体调用本函数时运行的内容
-if __name__ == '__main__':
+def main():
     de=int(input('请输入您需要进行的操作（1为压缩，2为解压）：'))
     if de==1:
         in_file=input('请输入您需要压缩的文件路径：')

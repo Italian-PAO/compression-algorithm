@@ -31,5 +31,5 @@ def trayagain():
     checkfileiszip(filepath)
 
 
-if __name__ == '__main__':
+def zip2files():
     trayagain()
