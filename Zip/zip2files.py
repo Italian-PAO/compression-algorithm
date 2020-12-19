@@ -16,20 +16,18 @@ def un_zip(file_name):
 def checkfileiszip(file):
     path= file.strip("\"")
     if os.path.exists(path) == False:
-        print("文件不存在，请检查文件路径")
-        trayagain()
+        return("文件不存在，请检查文件路径")
+
     else:
         if os.path.splitext(path)[1] == ".zip":
             un_zip(path)
+            return("解压成功")
         else:
-            print("文件格式错误，目前只支持zip格式")
-            trayagain()
+            return("文件格式错误，目前只支持zip格式")
 
 
-def trayagain():
-    filepath = input("手动输入需要解压的文件路径：")
-    checkfileiszip(filepath)
 
 
-def zip2files():
-    trayagain()
+def zip2files(file_location):
+    hint=checkfileiszip(file_location)
+    return hint

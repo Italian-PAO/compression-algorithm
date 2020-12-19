@@ -1,4 +1,6 @@
 import zipfile,os
+
+
 def un_zip(file_name):
     """unzip zip file"""
     zip_file = zipfile.ZipFile(file_name)
@@ -10,7 +12,7 @@ def un_zip(file_name):
         zip_file.extract(names,os.path.splitext(file_name)[0])
     zip_file.close()
 
-def compress(get_files_path, set_files_path,pwd):
+def compress(get_files_path, set_files_path):
     print("正在压缩....")
     f = zipfile.ZipFile(set_files_path, 'w', zipfile.ZIP_DEFLATED)
     if os.path.isfile(get_files_path):
@@ -23,30 +25,28 @@ def compress(get_files_path, set_files_path,pwd):
             f.write(os.path.join(dirpath,filename), fpath+filename)
     f.close()
 
-    print("压缩完成")
+    return("压缩完成")
 
-    input("Prease <enter>")
 
 
 def checkfile(get_files_path):
     path=get_files_path.strip("\"")
     if os.path.exists(path)==False:
-        print("路径输入错误")
-        get_files_path = input("重新输入需要处理的文件路径：")#需要压缩的文件夹
-        checkfile(get_files_path)
+        return("路径输入错误")
     else:
         if os.path.splitext(path)[1] == ".zip":
             un_zip(path)
+            return("该文件已经是zip压缩文件")
         else:
             # 存放的压缩文件地址(注意:不能与上述压缩文件夹一样)
             set_files_path = path+".zip"
-            compress(path, set_files_path,pwd)
+            return (compress(path, set_files_path))
 
 
-def files2zip():
-    pwd = input("使用者密码：")#需要压缩的文件夹
-    get_files_path = input("需要处理的文件路径：")#需要压缩的文件夹
-    checkfile(get_files_path)
+
+def files2zip(file_location):
+    hint=checkfile(file_location)
+    return hint
 
 
 

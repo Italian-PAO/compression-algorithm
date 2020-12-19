@@ -131,7 +131,7 @@ def file_encode(input_file):
             if code[i] == 49:
                 out = out | 1
         object.write(int.to_bytes(out,1,byteorder='big'))
-        print('压缩完成！')
+        return('压缩完成！')
 
 
 
@@ -241,17 +241,10 @@ def file_decode(input_file):
                     print(result)
                     result = b''
                     node_now = root
-    print('解压成功！')
+    return('解压成功！')
 
 # 本体调用本函数时运行的内容
-def main():
-    de=int(input('请输入您需要进行的操作（1为压缩，2为解压）：'))
-    if de==1:
-        in_file=input('请输入您需要压缩的文件路径：')
-        file_encode(in_file)
-    if de==2:
-        in_file=input('请输入您需要解压的文件路径：')
-        file_decode(in_file)
+
 
 
 
