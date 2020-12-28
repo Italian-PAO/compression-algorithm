@@ -1,9 +1,11 @@
 from Huffman import Huffman
+from lz4 import lz4
 from Zip import files2zip, zip2files
 from tkinter import *
 from tkinter.tix import Tk,Control,ComboBox
 from tkinter.messagebox import showinfo,showwarning,showerror
 import time
+
 
 
 # Booleans
@@ -149,10 +151,11 @@ def get_location(root,location_entry):
             hint = files2zip.files2zip(file_location)
         if Function_choice == 2:
             hint = zip2files.zip2files(file_location)
-    #elif Algorithm_choice == 3:
-        #if Function_choice == 1:
-
-        #if Function_choice == 2:
+    elif Algorithm_choice == 3:
+        if Function_choice == 1:
+            hint = lz4.main("-c",file_location)
+        if Function_choice == 2:
+            hint = lz4.main("-x", file_location)
     time_end = time.time()
     run_time=time_end-time_start
 

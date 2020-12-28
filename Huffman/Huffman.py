@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import os
+import copy_compare
+
 sys.setrecursionlimit(1000000)	  #python默认的递归深度有限，约900多，压缩文件时会超过，故引用sys修改最大递归深度
 
 # 代码中出现的列表及字典的详细解释
@@ -40,12 +43,13 @@ def node_encode(node1):            #对叶子结点进行编码
         return node_encode(node1.father)+b'1'
 
 def file_encode(input_file):
-    print('打开文件并读取中...\n')
+    if os.path.exists(input_file)==False:
+        return("路径输入错误")
     with open(input_file,'rb') as f:
         f.seek(0, 2)        #读取文件的总长度，seek(0,2)移到文件末尾，tell()指出当前位置，并且用seek(0)重新回到起点
         size=f.tell()
         f.seek(0)
-        bytes_list=[0]*size  #创建一个长度为size的列表，存放读入的字节
+        bytes_list=[0]*size  #创建一个长度为size的列表adsdad，存放读入的字节
 
         i=0
         while i<size:
@@ -140,7 +144,9 @@ def file_encode(input_file):
 #第二行的开始两个字节纪录结点数量n，然后一个字节纪录频率的位宽width，后面纪录每个字节与其频率
 #之后全部是数据内容
 def file_decode(input_file):
-    print('开始解压缩文件')
+    if os.path.exists(input_file)==False:
+        return("路径输入错误")
+    path = input_file.replace('.cc','')           ######需求变更添加内容
     with open(input_file,'rb') as f_in:
 
         f_in.seek(0,2)
@@ -150,6 +156,12 @@ def file_decode(input_file):
         path_list = input_file.split('.')
         name = f_in.readline().decode(encoding="UTF-8").split('/')[-1].replace('\n','')
         name = name.split('.')[-1]                   #读出文件名
+
+        all_filepath = path +"."+ name                          ######需求变更添加内容
+        contact = "null"  ##用来链接两个if
+        if os.path.exists(all_filepath)==True:                              ######需求变更添加内容
+            original_path = copy_compare.change_filename(all_filepath, "cc")                    ######需求变更添加内容
+            contact = original_path   ###用来链接两个if
         with open(path_list[0]+'.'+name,'wb') as f_out:
             n=int.from_bytes(f_in.read(2), byteorder = 'big')     #读出结点数量
             width=int.from_bytes(f_in.read(1), byteorder = 'big') #读出位宽
@@ -241,6 +253,9 @@ def file_decode(input_file):
                     print(result)
                     result = b''
                     node_now = root
+    if (contact== 'null')==False:
+        copy_compare.compare_file(contact, all_filepath, "cc")  ######需求变更添加内容
+        return('该解压文件名已被占用，将对原文件复制更名后覆盖')
     return('解压成功！')
 
 # 本体调用本函数时运行的内容

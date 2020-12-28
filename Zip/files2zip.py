@@ -34,9 +34,12 @@ def checkfile(get_files_path):
     if os.path.exists(path)==False:
         return("路径输入错误")
     else:
+        zipname = path + ".zip"
+        if os.path.exists(zipname) == True:
+            return ('该压缩文件名已被占用，无法进行压缩')
         if os.path.splitext(path)[1] == ".zip":
+            return ("该文件已经是zip压缩文件")
             un_zip(path)
-            return("该文件已经是zip压缩文件")
         else:
             # 存放的压缩文件地址(注意:不能与上述压缩文件夹一样)
             set_files_path = path+".zip"
