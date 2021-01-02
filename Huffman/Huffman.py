@@ -4,7 +4,9 @@
 import sys
 import os
 import copy_compare
-
+import lz4.lz4
+import tempfile
+import shutil
 sys.setrecursionlimit(1000000)	  #python默认的递归深度有限，约900多，压缩文件时会超过，故引用sys修改最大递归深度
 
 # 代码中出现的列表及字典的详细解释
@@ -42,110 +44,15 @@ def node_encode(node1):            #对叶子结点进行编码
     else:
         return node_encode(node1.father)+b'1'
 
-def file_encode(input_file):
-    if os.path.exists(input_file)==False:
-        return("路径输入错误")
-    with open(input_file,'rb') as f:
-        f.seek(0, 2)        #读取文件的总长度，seek(0,2)移到文件末尾，tell()指出当前位置，并且用seek(0)重新回到起点
-        size=f.tell()
-        f.seek(0)
-        bytes_list=[0]*size  #创建一个长度为size的列表adsdad，存放读入的字节
-
-        i=0
-        while i<size:
-            bytes_list[i]=f.read(1)  #每次读取一个符号
-            i+=1
-
-    print('统计各字节出现频率中...\n')
-    count_dict = {}  # 使用一个字典统计一下出现次数
-    for x in bytes_list:
-        if x not in count_dict.keys():
-            count_dict[x] = 0
-        count_dict[x] += 1
-
-    node_dict={}   #使用一个字典将count_list中的值node化,其中key为对应的字符，值为字符对应的结点
-    for x in count_dict.keys():
-        node_dict[x]=node(count_dict[x])  #结点的权重即count_dict[x]
-
-    print('生成哈夫曼编码中...\n')
-    nodes=[]      #使用一个列表来保存结点并由此构建哈夫曼树
-    for x in node_dict.keys():
-        nodes.append(node_dict[x])
-
-    root=creat_tree(nodes)   #构建哈夫曼树
-
-    #对叶子结点编码，输出字节与哈夫曼码的字典
-    bytes_dict={}
-    for x in node_dict.keys():
-        bytes_dict[x]=node_encode(node_dict[x])
-
-    # print(bytes_dict)
-    #开始压缩文件
-    print('开始压缩文件...\n')
-    path_list=input_file.split('.')
-    name=input_file.split('/')[-1]
-    with open(path_list[0]+'.cc','wb') as object:
-        #首先将文件的原名写入
-        object.write((name+'\n').encode(encoding='UTF-8'))
-        #写入结点数量，占位2个字节
-        n=len(count_dict.keys())
-        object.write(int.to_bytes(n ,2 ,byteorder = 'big'))
-
-        #先计算最大频率所占的字节数
-        times=0
-        for x in count_dict.keys():
-            if times<count_dict[x]:
-                times=count_dict[x]
-        width=1
-        if times>255:
-            width=2
-            if times>65535:
-                width=3
-                if times>16777215:
-                    width=4
-        # 写入width
-        object.write(int.to_bytes(width,1,byteorder='big'))
-
-
-        # 写入结点以及对应频率
-        for x in count_dict.keys():
-            object.write(x)
-            object.write(int.to_bytes(count_dict[x], width, byteorder='big'))
-
-        #写入数据，注意每次要凑一个字节
-        code=b''     #用来存放编译出来的代码
-        for x in bytes_list:
-            code+=bytes_dict[x]
-            out=0
-            while len(code)>=8:
-                for s in range(8):
-                    out = out << 1
-                    if code[s] == 49:    #ASCII码中1为49
-                        out = out | 1
-                object.write(int.to_bytes(out,1,byteorder='big'))
-                out=0
-                code=code[8:]
-        #处理可能不足一个字节的数据
-        object.write(int.to_bytes(len(code), 1, byteorder='big')) #写入最后一节数据长度
-        print(len(code))
-        print(code)
-        out=0
-        for i in range(len(code)):
-            out = out << 1
-            if code[i] == 49:
-                out = out | 1
-        object.write(int.to_bytes(out,1,byteorder='big'))
-        return('压缩完成！')
-
-
-
 #文件的解压缩
 #解压缩前，重温下压缩文件.cc的内容：第一行为原文件名
 #第二行的开始两个字节纪录结点数量n，然后一个字节纪录频率的位宽width，后面纪录每个字节与其频率
 #之后全部是数据内容
-def file_decode(input_file):
-    if os.path.exists(input_file)==False:
-        return("路径输入错误")
+def file_decode(input_file,ccpath):
+  #  if os.path.exists(input_file)==False:
+  #      return("路径输入错误")
+  #  if not os.path.splitext(input_file)[1] == ".cc":
+  #      return ('文件类型不合法，无法进行解压')
     path = input_file.replace('.cc','')           ######需求变更添加内容
     with open(input_file,'rb') as f_in:
 
@@ -156,13 +63,17 @@ def file_decode(input_file):
         path_list = input_file.split('.')
         name = f_in.readline().decode(encoding="UTF-8").split('/')[-1].replace('\n','')
         name = name.split('.')[-1]                   #读出文件名
-
-        all_filepath = path +"."+ name                          ######需求变更添加内容
-        contact = "null"  ##用来链接两个if
-        if os.path.exists(all_filepath)==True:                              ######需求变更添加内容
-            original_path = copy_compare.change_filename(all_filepath, "cc")                    ######需求变更添加内容
-            contact = original_path   ###用来链接两个if
-        with open(path_list[0]+'.'+name,'wb') as f_out:
+        _name="txt docx pptx avi aif doc exe html zip tar lz4r cc"
+        if name in _name:
+            all_filepath = path +"."+ name                          ######需求变更添加内容
+        else:
+            all_filepath = path
+        #contact = "null"  ##用来链接两个if
+        if os.path.exists(all_filepath)==True:
+            return 0
+        #    original_path = copy_compare.change_filename(all_filepath, "cc")                    ######需求变更添加内容
+        #    contact = original_path   ###用来链接两个if
+        with open(ccpath,'wb') as f_out:
             n=int.from_bytes(f_in.read(2), byteorder = 'big')     #读出结点数量
             width=int.from_bytes(f_in.read(1), byteorder = 'big') #读出位宽
             count_dict={}
@@ -253,15 +164,197 @@ def file_decode(input_file):
                     print(result)
                     result = b''
                     node_now = root
-    if (contact== 'null')==False:
-        copy_compare.compare_file(contact, all_filepath, "cc")  ######需求变更添加内容
-        return('该解压文件名已被占用，将对原文件复制更名后覆盖')
-    return('解压成功！')
+    #if (contact== 'null')==False:
+    #    copy_compare.compare_file(contact, all_filepath, "cc")  ######需求变更添加内容
+    #    return('该解压文件名已被占用，将对原文件复制更名后覆盖')
+    return 1
 
 # 本体调用本函数时运行的内容
 
 
+def file_encode(dir_file,filename):
+  # if os.path.exists(input_file)==False:
+  #      return("路径输入错误")
+  #  out=input_file+".cc"
+  #  if '.' in input_file:  ##为huffman而改
+  #      out = input_file.split('.')[0]+".cc"
+  #  if os.path.exists(out)==True:
+  #      return("该压缩文件名已被占用，无法进行压缩")
+    with open(dir_file,'rb') as f:
+        f.seek(0, 2)        #读取文件的总长度，seek(0,2)移到文件末尾，tell()指出当前位置，并且用seek(0)重新回到起点
+        size=f.tell()
+        f.seek(0)
+        bytes_list=[0]*size  #创建一个长度为size的列表adsdad，存放读入的字节
 
+        i=0
+        while i<size:
+            bytes_list[i]=f.read(1)  #每次读取一个符号
+            i+=1
+
+    print('统计各字节出现频率中...\n')
+    count_dict = {}  # 使用一个字典统计一下出现次数
+    for x in bytes_list:
+        if x not in count_dict.keys():
+            count_dict[x] = 0
+        count_dict[x] += 1
+
+    node_dict={}   #使用一个字典将count_list中的值node化,其中key为对应的字符，值为字符对应的结点
+    for x in count_dict.keys():
+        node_dict[x]=node(count_dict[x])  #结点的权重即count_dict[x]
+
+    print('生成哈夫曼编码中...\n')
+    nodes=[]      #使用一个列表来保存结点并由此构建哈夫曼树
+    for x in node_dict.keys():
+        nodes.append(node_dict[x])
+
+    root=creat_tree(nodes)   #构建哈夫曼树
+
+    #对叶子结点编码，输出字节与哈夫曼码的字典
+    bytes_dict={}
+    for x in node_dict.keys():
+        bytes_dict[x]=node_encode(node_dict[x])
+
+    # print(bytes_dict)
+    #开始压缩文件
+    print('开始压缩文件...\n')
+    path_list=filename.split('.')
+    name=filename.split('/')[-1]
+    with open(path_list[0]+'.cc','wb') as object:
+        #首先将文件的原名写入
+        object.write((name+'\n').encode(encoding='UTF-8'))
+        #写入结点数量，占位2个字节
+        n=len(count_dict.keys())
+        object.write(int.to_bytes(n ,2 ,byteorder = 'big'))
+
+        #先计算最大频率所占的字节数
+        times=0
+        for x in count_dict.keys():
+            if times<count_dict[x]:
+                times=count_dict[x]
+        width=1
+        if times>255:
+            width=2
+            if times>65535:
+                width=3
+                if times>16777215:
+                    width=4
+        # 写入width
+        object.write(int.to_bytes(width,1,byteorder='big'))
+
+
+        # 写入结点以及对应频率
+        for x in count_dict.keys():
+            object.write(x)
+            object.write(int.to_bytes(count_dict[x], width, byteorder='big'))
+
+        #写入数据，注意每次要凑一个字节
+        code=b''     #用来存放编译出来的代码
+        for x in bytes_list:
+            code+=bytes_dict[x]
+            out=0
+            while len(code)>=8:
+                for s in range(8):
+                    out = out << 1
+                    if code[s] == 49:    #ASCII码中1为49
+                        out = out | 1
+                object.write(int.to_bytes(out,1,byteorder='big'))
+                out=0
+                code=code[8:]
+        #处理可能不足一个字节的数据
+        object.write(int.to_bytes(len(code), 1, byteorder='big')) #写入最后一节数据长度
+    #print(len(code))
+    #print(code)
+        out=0
+        for i in range(len(code)):
+            out = out << 1
+            if code[i] == 49:
+                out = out | 1
+        object.write(int.to_bytes(out,1,byteorder='big'))
+    return 1
+       # huff_conpare(input_file)
+       # return ('压缩完成，校验结果已保存在difference文件中')
+'''
+        output_file=input_file
+        original_path = copy_compare.change_filename(input_file, "cc", 1,output_file)  ######需求变更添加内容
+        output_file = input_file.split('.')[0]+".cc"
+        print(output_file)
+        file_decode(output_file)  ######需求变更添加内容
+        copy_compare.compare_file(original_path, input_file, "cc")  ######需求变更添加内容
+        os.remove(input_file)
+        copy_compare.change_filename(input_file, "cc", 2, original_path)
+        return ('压缩完成，校验结果已保存在difference文件中')
+'''
+
+
+
+
+def huff_compare(input_file,inf):
+        output_file = input_file
+        original_path = copy_compare.change_filename(input_file, "cc", 1, output_file)  ######需求变更添加内容
+        output_file = input_file.split('.')[0] + ".cc"
+        huff_uncompress(output_file)  ######需求变更添加内容
+        copy_compare.compare_file(original_path, input_file, "cc")  ######需求变更添加内容
+        if inf==1:
+            shutil.rmtree(input_file)
+        if inf==2:
+            os.remove(input_file)
+        copy_compare.change_filename(input_file, "cc", 2, original_path)
+
+def huff_compress(input_file):
+    if os.path.exists(input_file)==False:
+        return("路径输入错误")
+    out=input_file+".cc"
+    if '.' in input_file:  ##为huffman而改
+        out = input_file.split('.')[0]+".cc"
+    if os.path.exists(out)==True:
+        return("该压缩文件名已被占用，无法进行压缩")
+
+    if os.path.isdir(input_file) :
+        ar_name = lz4.lz4.make_archive(input_file)
+        hintinf = file_encode(ar_name, input_file)
+        huff_compare(input_file,1)
+        if hintinf == 1:
+            return ("压缩完成，校验结果已保存在difference文件中")
+    else:
+        hintinf=file_encode(input_file,input_file)
+        huff_compare(input_file,2)
+        if hintinf == 1:
+            return ("压缩完成，校验结果已保存在difference文件中")
+
+
+
+def huff_uncompress(input_cc,dest_dir='.'):
+    if os.path.exists(input_cc)==False:
+        return("路径输入错误")
+    if not os.path.splitext(input_cc)[1] == ".cc":
+        return ('文件类型不合法，无法进行解压')
+
+    with open(input_cc,'rb') as f_in:
+
+        f_in.seek(0,2)
+        length=f_in.tell() #读出文件的总长度
+        f_in.seek(0)
+
+        name = f_in.readline().decode(encoding="UTF-8").split('/')[-1].replace('\n','')
+        name = name.split('.')[-1]                   #读出文件名
+    _name="txt docx pptx avi aif doc exe html zip tar lz4r cc"
+    if name in _name:
+        path = input_cc.replace('.cc', '')
+        path=path+'.'+ name
+        hintinf=file_decode(input_cc,path)
+        if hintinf == 0:
+            return ("该解压文件名已被占用，无法进行解压")
+    else:
+        f, ar_name = tempfile.mkstemp('.tar')
+        hintinf=file_decode(input_cc,ar_name)
+        if hintinf == 0:
+            return ("该解压文件名已被占用，无法进行解压")
+        ar_file = lz4.lz4.lz4archiver.ArchiveFile()
+        ar_file.open_for_read(ar_name)
+        ar_file.unpack(dest_dir)
+        ar_file.close()
+
+    return ("解压完成")
 
 
 

@@ -5,20 +5,31 @@ import difflib
 import hashlib
 
 
-def change_filename(same_name,Algorithm):
-    if '.' in same_name:           ##为huffman而改
-        ends = same_name.split('.')[-1]
-        ends = '.'+ends
-        new_name = same_name.replace(ends,'') + "_" + Algorithm + "_original"+ends
-    ##if os.path.splitext(same_name)[1] == ".txt":
-        ##new_name = same_name.replace('.txt', '')+"_"+Algorithm+"_original.txt"
-    else:
-        new_name = same_name+"_"+Algorithm+"_original"
-    shutil.move(same_name,new_name)  ##重命名文件夹
-    return new_name
 
+def del_file(path):
+    shutil.rmtree(path)
+    #for i in os.listdir(path):
+    #    path_file = os.path.join(path,i)  #取文件绝对路径
+    #   if os.path.isfile(path_file):
+    #        os.remove(path_file)
+    #    else:
+    #        del_file(path_file)
+    #os.removedirs(path)
 
-
+def change_filename(same_name,Algorithm,exam,back):
+    if exam==1:
+        if '.' in same_name:           ##为huffman而改
+            ends = same_name.split('.')[-1]
+            ends = '.'+ends
+            new_name = same_name.replace(ends,'') + "_" + Algorithm +ends
+            shutil.move(same_name, new_name)  ##重命名文件夹
+            return new_name
+        else:
+            new_name = same_name+"_"+Algorithm
+            shutil.move(same_name,new_name)  ##重命名文件夹
+            return new_name
+    else :
+        shutil.move(back,same_name )
 
 def compare_file(old_file,new_file,Algorithm):
     def getFileMd5(filename):
@@ -83,11 +94,6 @@ def compare_file(old_file,new_file,Algorithm):
 
     dif_file = open(text_create(new_file,Algorithm), 'w')
     dirCompare(old_file,new_file,dif_file)
-
-
-
-
-
 
 def text_create(new_file,Algorithm):
     if '.' in new_file:           ##为huffman而改

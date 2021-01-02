@@ -19,18 +19,15 @@ def checkfileiszip(file):
     path= file.strip("\"")
     if os.path.exists(path) == False:
         return("文件不存在，请检查文件路径")
-
+    filename=file.replace('.zip','')
+    if os.path.exists(filename) == True:
+        return ('该解压文件名已被占用，无法进行解压')
     else:
         filepath = path.replace('.zip','')
         if os.path.splitext(path)[1] == ".zip":
-            if os.path.exists(filepath) == True:
-                original_path = copy_compare.change_filename(filepath, "zip")  ######需求变更添加内容
-                un_zip(path)  ######需求变更添加内容
-                copy_compare.compare_file(original_path, filepath, "zip")  ######需求变更添加内容
-                return ('该解压文件名已被占用，将对原文件复制更名后覆盖')
-            else:
-                un_zip(path)
-                return("解压成功")
+            un_zip(path)
+            return ("解压成功")
+
         else:
             return("文件格式错误，目前只支持zip格式")
 

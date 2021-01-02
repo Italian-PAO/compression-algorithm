@@ -143,9 +143,9 @@ def get_location(root,location_entry):
 
     if Algorithm_choice == 1:
         if Function_choice ==  1:
-            hint = Huffman.file_encode(file_location)
+            hint = Huffman.huff_compress(file_location)
         if Function_choice == 2:
-            hint = Huffman.file_decode(file_location)
+            hint = Huffman.huff_uncompress(file_location)
     elif Algorithm_choice == 2:
         if Function_choice ==  1:
             hint = files2zip.files2zip(file_location)
